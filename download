@@ -1,0 +1,162 @@
+---
+name: handoff
+description: >-
+  Generate a structured project handoff document when switching between AI agents or sessions.
+  If .handoff/PROJECT.md exists, updates the living document and creates a snapshot.
+  If not, creates a standalone handoff snapshot.
+  Use when the user says "handoff", "交接", "切换agent", "保存上下文", "context transfer",
+  or wants to preserve current work state before switching to another AI assistant.
+---
+
+# Agent Handoff Skill
+
+Generate a structured handoff document that allows another AI agent (or a future session) to
+seamlessly continue your work — as if it had been present from the start.
+
+This skill operates in two modes:
+- **With PROJECT.md** (persistent mode): Updates the living project file + creates a timestamped snapshot
+- **Without PROJECT.md** (standalone mode): Creates a one-time handoff snapshot
+
+## When to use
+
+- Switching from one AI agent to another (e.g., Claude → ChatGPT, or Claude session A → B)
+- Pausing a long project and resuming later
+- Escalating to a more capable model mid-task
+- Saving working context before closing a session
+- User says: "handoff", "交接", "切换", "保存进度", "context transfer", "save state"
+
+## Workflow
+
+### Step 1: Check for existing PROJECT.md
+
+Look for `.handoff/PROJECT.md` in the current project root:
+
+- **If found** → enter **persistent mode** (Step 2A)
+- **If not found** → enter **standalone mode** (Step 2B)
+
+### Step 2A: Persistent mode — Update PROJECT.md
+
+Read the existing PROJECT.md, then review the current conversation to extract new information:
+
+1. **New decisions** → append to "决策日志" table
+2. **New progress** → prepend entry to "进展日志" section
+3. **New blockers or failed paths** → update respective sections
+4. **Status changes** → update todo items (mark done, add new, change priority)
+5. **New key files** → update "关键文件索引"
+6. **Updated constraints** → add or modify "约束条件"
+7. **Update timestamp** → set "最后更新" to now
+
+Rules for updating:
+- **Never delete** existing entries — only append or mark status changes
+- **Prepend** new log entries (newest first)
+- **Preserve** the original structure and section headers
+- If a section has no new info, leave it unchanged
+- Keep PROJECT.md under 200 lines; if it exceeds, suggest archiving old entries
+
+### Step 2B: Standalone mode — Generate full handoff
+
+Review the full conversation and extract:
+
+1. **Project goal** — the ultimate objective
+2. **Completed milestones** — deliverables, files, decisions
+3. **Work in progress** — partially done tasks, where they stalled
+4. **Failed approaches** — paths tried and rejected
+5. **Key decisions** — architectural choices and rationale
+6. **Constraints** — hard requirements, style guides, deadlines
+7. **Dependencies** — files, data, APIs, tools
+8. **Next steps** — prioritized action items with success criteria
+
+Generate the handoff document in this structure:
+
+```markdown
+# 项目交接文档 (Project Handoff)
+
+> 生成时间: [YYYY-MM-DD HH:MM]
+> 来源 Agent: [当前 Agent 名称/模型]
+> 交接原因: [切换原因简述]
+
+---
+
+## 1. 项目目标 (Project Goal)
+
+[用 2-3 句话描述项目的终极目标]
+
+## 2. 已完成成果 (Completed Work)
+
+### 产出文件
+- `[文件路径]` — [文件用途说明]
+
+### 关键决策
+- **[决策主题]**: [选择了什么] — 理由: [为什么这样选]
+
+### 已验证的技术方案
+- [方案描述] — 结果: [成功/部分成功] — 备注: [关键细节]
+
+## 3. 当前状态 (Current Status)
+
+### 正在进行的任务
+- [任务描述] — 进度: [完成百分比或具体卡点]
+
+### 最后一步操作
+- [最后一次具体做了什么]
+- [产生的结果或输出]
+
+## 4. 阻塞点与失败路径 (Blockers & Failed Paths)
+
+### 当前阻塞点
+- [阻塞描述] — 影响: [阻塞了什么] — 建议: [可能的解决方向]
+
+### 已验证无效的路径 ⚠️
+- [方案描述] — 失败原因: [具体原因] — **不要重复尝试**
+
+## 5. 待办事项 (Next Steps)
+
+1. [ ] **[任务1]** — 成功标准: [怎样算完成]
+2. [ ] **[任务2]** — 成功标准: [怎样算完成]
+
+## 6. 约束与风格指南 (Constraints & Style Guide)
+
+- [约束1]
+- [约束2]
+
+## 7. 关键上下文 (Critical Context)
+
+[隐含偏好、被否决的方案、用户明确说过的"不要做X"、项目中的敏感点]
+
+## 8. 可复制上下文块 (Copy-Paste Context Block)
+
+[将上述所有内容压缩为一个连贯的纯文本块，确保新 Agent 能一次性理解全部上下文]
+```
+
+### Step 3: Save files
+
+**Persistent mode:**
+1. Update `.handoff/PROJECT.md` in place
+2. Create snapshot: `.handoff/handoff-[YYYY-MM-DD-HHmm].md`
+3. Update `.handoff/LATEST.md` (copy of PROJECT.md)
+
+**Standalone mode:**
+1. Create `.handoff/` directory if needed
+2. Save to `.handoff/handoff-[YYYY-MM-DD-HHmm].md`
+3. Save to `.handoff/LATEST.md`
+
+### Step 4: Output confirmation
+
+Report to the user:
+- Which mode was used (persistent/standalone)
+- Where files were saved
+- What was updated (persistent mode) or captured (standalone mode)
+- The "copy-paste context block", ready to use
+
+## Language handling
+
+- If the user writes in Chinese → generate in Chinese (with English section headers)
+- If the user writes in English → generate in English
+- If mixed → default to Chinese for content, English for technical terms
+
+## Edge cases
+
+- **No prior context**: If invoked at the start of a conversation with no work done, say so.
+- **Sensitive data**: Do not include passwords, API keys, or personal data. Reference by location only.
+- **Multi-project session**: Generate separate sections per project.
+- **PROJECT.md conflict**: If PROJECT.md was modified outside this session, show the diff and ask the user how to merge.

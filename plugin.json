@@ -1,0 +1,16 @@
+{
+  "name": "agent-handoff-skills",
+  "owner": {
+    "name": "Lee"
+  },
+  "description": "Agent Handoff Skills — persistent project context transfer with auto-logging for Claude Code.",
+  "plugins": [
+    {
+      "name": "agent-handoff-skills",
+      "source": "./",
+      "description": "4 commands: /handoff-init, /handoff-log, /handoff, /handoff-receive. Auto-trigger rules for milestones, decisions, blockers, and failed paths.",
+      "version": "1.0.0",
+      "license": "MIT"
+    }
+  ]
+}
